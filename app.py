@@ -1,54 +1,212 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import datetime as dt
+import ast
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+import plotly.graph_objects as go
 
 # Sidebar navigation
-tabs = st.sidebar.radio('Navigation', ['Trends', 'Engagement', 'Model Output', 'Recommendations'])
+tabs = st.sidebar.radio('Navigation', [
+    'Top Entities Over Time',
+    'Timing vs Engagement',
+    'Sentiment vs Virality',
+    'Trending Hashtags Monitor',
+])
 
 # Load processed data (update path as needed)
 data_path = 'data/processed/tiktok_processed_with_nlp_features.csv'
 df = pd.read_csv(data_path)
+
+# Optional preprocessing
+df['create_time'] = pd.to_datetime(df['create_time'], errors='coerce')
+df['date'] = df['create_time'].dt.date
 
 # Ensure all columns are accessible directly (no leading/trailing spaces, correct dtypes)
 df.columns = df.columns.str.strip()
 
 st.title('TikTok Trends & Virality Dashboard')
 
-if tabs == 'Trends':
-    st.header('Trend Evolution Over Time')
-    if 'date' in df.columns:
-        fig = px.line(df, x='date', y='video_views', title='Views Over Time')
-        st.plotly_chart(fig)
-    st.write('Explore how TikTok trends evolve over time.')
+# 1. Top Entities Over Time
 
-elif tabs == 'Engagement':
-    
-    st.header('Engagement Analysis')
-    if 'likes' in df.columns and 'shares' in df.columns:
-        color_col = 'primary_hashtag_category' if 'primary_hashtag_category' in df.columns else None
-        fig = px.scatter(
-            df, x='likes', y='shares', color=color_col,
-            title='Likes vs Shares by Hashtag Category' if color_col else 'Likes vs Shares'
+if tabs == 'Top Entities Over Time':
+    st.header('Top Extracted Entities Over Time')
+
+    # Parameters
+    TOP_N = st.slider("Select number of top entities to display:", 3, 20, 5)
+
+    # Check required columns
+    if 'create_time' in df.columns and 'extracted_entities' in df.columns:
+        # Ensure datetime and extract date
+        df['create_time'] = pd.to_datetime(df['create_time'], errors='coerce')
+        df['date'] = df['create_time'].dt.date
+
+        # Convert stringified list to actual list (if needed)
+        df['extracted_entities'] = df['extracted_entities'].apply(
+            lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+        )
+
+        # Explode entity lists
+        entity_df = df.explode('extracted_entities').rename(columns={'extracted_entities': 'entity'})
+        entity_df.dropna(subset=['entity'], inplace=True)
+
+        # Count top N entities overall
+        top_entities = entity_df['entity'].value_counts().nlargest(TOP_N).index.tolist()
+        filtered_entity_df = entity_df[entity_df['entity'].isin(top_entities)]
+
+        # Group by date and entity
+        trend_df = (
+            filtered_entity_df.groupby(['date', 'entity'])
+            .size()
+            .reset_index(name='mentions')
+        )
+
+        # Plot line chart
+        fig = px.line(
+            trend_df,
+            x='date',
+            y='mentions',
+            color='entity',
+            title=f"Top {TOP_N} Mentioned Entities Over Time",
+            labels={'mentions': 'Mentions', 'date': 'Date'}
         )
         st.plotly_chart(fig)
-    st.write('Visualize engagement metrics and their impact on virality.')
 
-elif tabs == 'Model Output':
-    st.header('Predictive Model Output')
-    if 'predicted_virality' in df.columns:
-        fig = px.histogram(df, x='predicted_virality', title='Predicted Virality Distribution')
+        st.caption("Shows frequency of top N named entities (topics) extracted per day.")
+
+    else:
+        st.warning("The required columns 'create_time' and 'extracted_entities' are missing from the dataset.")
+
+
+# 2. Timing vs Engagement
+
+elif tabs == 'Timing vs Engagement':
+    st.header('Post Timing vs Engagement')
+
+    if 'create_hour' in df.columns and 'day_of_week' in df.columns and 'weighted_engagement_rate' in df.columns:
+
+        # Create pivot table with weighted_engagement_rate
+        pivot = df.pivot_table(
+            values='engagement_rate_per_play_capped',
+            index='day_of_week',
+            columns='create_hour',
+            aggfunc='mean'
+        ).sort_index()
+
+        # Plot smooth heatmap
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=pivot.values,
+                x=pivot.columns,
+                y=["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                colorscale='YlGnBu',
+                zsmooth='best',
+                colorbar=dict(title="Engagement Rate Per Play")
+            )
+        )
+
+        fig.update_layout(
+            title="Smooth Heatmap: Engagement Rate by Post Timing",
+            xaxis_title="Hour of Day",
+            yaxis_title="Day of Week",
+            autosize=True
+        )
+
         st.plotly_chart(fig)
-    st.write('See how the AI model predicts TikTok virality.')
 
-elif tabs == 'Recommendations':
-    st.header('Recommendations for TikTok Strategy')
-    st.markdown('''
-    - Use trending hashtags and positive sentiment to boost reach.
-    - Post at optimal times based on trend analysis.
-    - Focus on content types that historically perform well.
-    - Leverage AI predictions to optimize future posts.
-    ''')
-    st.write('These recommendations are based on the analysis and model insights.')
+
+
+# 3. Sentiment vs Virality
+elif tabs == 'Sentiment vs Virality':
+    st.header('Sentiment vs Normalized Virality (Polarity ≠ 0)')
+
+    if {'sentiment_polarity', 'sentiment_subjectivity', 'virality_score_normalized'}.issubset(df.columns):
+        # Filter out neutral polarity
+        filtered_df = df[
+            (df['sentiment_polarity'] != 0) &
+            (df['virality_score_normalized'] < 1)
+        ]
+
+        fig = px.scatter(
+            filtered_df,
+            x='sentiment_polarity',
+            y='virality_score_normalized',
+            color='sentiment_subjectivity',
+            color_continuous_scale='RdYlBu_r',
+            title='Sentiment vs Virality (Excluding Neutral Polarity)',
+            labels={
+                'sentiment_polarity': 'Polarity (Negative → Positive)',
+                'virality_score_normalized': 'Normalized Virality',
+                'sentiment_subjectivity': 'Subjectivity (Objective → Subjective)'
+            },
+            hover_data=['video_id'] if 'video_id' in df.columns else None
+        )
+
+        fig.update_layout(
+            xaxis=dict(range=[-1, 1]),
+            yaxis=dict(range=[0, 0.5])
+        )
+
+        st.plotly_chart(fig)
+        st.caption('Neutral-toned (polarity = 0) posts are excluded for clarity.')
+
+# 4. Trending Hashtags Monitor
+elif tabs == 'Trending Hashtags Monitor':
+    st.header('📈 Real-Time Trending Hashtag Monitor')
+
+    # Check necessary columns
+    if 'create_time' in df.columns and 'hashtag_list_clean' in df.columns:
+        # Convert datetime and evaluate lists
+        df['create_time'] = pd.to_datetime(df['create_time'], errors='coerce')
+
+        # Optional: convert stringified list to real list
+        df['hashtag_list_clean'] = df['hashtag_list_clean'].apply(
+            lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+        )
+
+        # Set current time and define sliding window
+        current_time = df['create_time'].max()
+        time_window_days = st.slider("Time window (days)", 7, 30, 7)
+
+        # Filter rows within the sliding time window
+        recent_df = df[df['create_time'] > (current_time - pd.Timedelta(hours=time_window_days))]
+
+        # Explode hashtag list
+        exploded = recent_df.explode('hashtag_list_clean')
+        exploded = exploded.dropna(subset=['hashtag_list_clean'])
+        
+        # Drop blanks and NaNs
+        exploded = exploded[
+            exploded['hashtag_list_clean'].notna() &  # remove NaNs
+            (exploded['hashtag_list_clean'].str.strip() != '')  # remove empty strings
+        ]
+
+
+        # Count top hashtags
+        top_hashtags = (
+            exploded['hashtag_list_clean']
+            .value_counts()
+            .nlargest(10)
+            .reset_index()
+            .rename(columns={'index': 'Hashtag', 'hashtag_list_clean': 'Mentions'})
+        )
+
+        # Plot
+        fig = px.bar(
+            top_hashtags,
+            x='Hashtag',
+            y='Mentions',
+            title=f"Top Trending Hashtags (Last {time_window_days} Days)",
+            labels={'Mentions': 'Count'}
+        )
+
+        st.plotly_chart(fig)
+        st.caption(f"Data filtered from: {current_time - pd.Timedelta(hours=time_window_days):%Y-%m-%d %H:%M} to {current_time:%Y-%m-%d %H:%M}")
+    else:
+        st.warning("Required columns 'create_time' and 'hashtag_list_clean' not found.")
+
 
 # Optionally, display the dataframe for user reference
 with st.expander('Show DataFrame'):
