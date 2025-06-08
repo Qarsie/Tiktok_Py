@@ -48,11 +48,58 @@ if tabs == 'Top Entities Over Time':
             lambda x: ast.literal_eval(x) if isinstance(x, str) else x
         )
 
-        # Explode entity lists
-        entity_df = df.explode('extracted_entities').rename(columns={'extracted_entities': 'entity'})
-        entity_df.dropna(subset=['entity'], inplace=True)
+        # Mapping from entity label codes to human-readable names
+        ENTITY_LABELS_MAP = {
+            "PERSON": "Person",
+            "ORG": "Organization",
+            "GPE": "Country/City/State",
+            "LOC": "Location",
+            "PRODUCT": "Product",
+            "EVENT": "Event",
+            "WORK_OF_ART": "Work of Art",
+            "LAW": "Law",
+            "LANGUAGE": "Language",
+            "DATE": "Date",
+            "TIME": "Time",
+            "PERCENT": "Percent",
+            "MONEY": "Money",
+            "QUANTITY": "Quantity",
+            "ORDINAL": "Ordinal",
+            "CARDINAL": "Cardinal",
+            # Add more mappings as needed
+        }
 
-        # Count top N entities overall
+        # Flatten and extract all unique entity labels for filtering
+        all_labels = set()
+        for ents in df['extracted_entities']:
+            if isinstance(ents, list):
+                for ent in ents:
+                    if isinstance(ent, (list, tuple)) and len(ent) == 2:
+                        all_labels.add(ent[1])
+        all_labels = sorted(all_labels)
+
+        # Create mapping for multiselect: human-readable -> code
+        label_display_map = {ENTITY_LABELS_MAP.get(code, code): code for code in all_labels}
+        display_labels = list(label_display_map.keys())
+
+        # Category filter (show human-readable, store code)
+        selected_display_labels = st.multiselect(
+            "Filter by entity category (label):",
+            options=display_labels,
+            default=display_labels
+        )
+        selected_labels = [label_display_map[d] for d in selected_display_labels]
+
+        # Explode entity lists and filter by selected labels
+        entity_df = df.explode('extracted_entities')
+        # Parse entity and label
+        entity_df = entity_df.dropna(subset=['extracted_entities'])
+        entity_df[['entity', 'label']] = entity_df['extracted_entities'].apply(
+            lambda x: pd.Series(x) if isinstance(x, (list, tuple)) and len(x) == 2 else pd.Series([None, None])
+        )
+        entity_df = entity_df[entity_df['label'].isin(selected_labels)]
+
+        # Count top N entities overall (by entity text, not label)
         top_entities = entity_df['entity'].value_counts().nlargest(TOP_N).index.tolist()
         filtered_entity_df = entity_df[entity_df['entity'].isin(top_entities)]
 
@@ -74,7 +121,7 @@ if tabs == 'Top Entities Over Time':
         )
         st.plotly_chart(fig)
 
-        st.caption("Shows frequency of top N named entities (topics) extracted per day.")
+        st.caption("Shows frequency of top N named entities (topics) extracted per day, filtered by category.")
 
     else:
         st.warning("The required columns 'create_time' and 'extracted_entities' are missing from the dataset.")
@@ -196,11 +243,16 @@ elif tabs == 'Trending Hashtags Monitor':
         # Plot
         fig = px.bar(
             top_hashtags,
-            x='Hashtag',
-            y='Mentions',
+            x='Mentions',
+            y='count',
             title=f"Top Trending Hashtags (Last {time_window_days} Days)",
             labels={'Mentions': 'Count'}
-        )
+            )
+        fig.update_layout(
+                xaxis_title='Hashtag',
+                yaxis_title='Count',
+            )
+        
 
         st.plotly_chart(fig)
         st.caption(f"Data filtered from: {current_time - pd.Timedelta(hours=time_window_days):%Y-%m-%d %H:%M} to {current_time:%Y-%m-%d %H:%M}")
