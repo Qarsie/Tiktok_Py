@@ -66,7 +66,8 @@ if tabs == 'Top Entities Over Time':
             "QUANTITY": "Quantity",
             "ORDINAL": "Ordinal",
             "CARDINAL": "Cardinal",
-            # Add more mappings as needed
+            "NORP": "Nationality/Religious/Political Group",
+            "FAC": "Facility",
         }
 
         # Flatten and extract all unique entity labels for filtering
