@@ -266,7 +266,124 @@ elif selected_page == "Part 3: Exploratory Data Analysis (EDA)":
 
 elif selected_page == "Part 4: Trend Identification Using NLP":
     st.header("Part 4: Trend Identification Using NLP")
-    st.write("Use NLP techniques to identify trends.")
+    st.write("Use NLP techniques to identify trends in TikTok video descriptions and hashtags.")
+    try:
+        import plotly.express as px
+        import pandas as pd
+        import ast
+        df = pd.read_csv("data/processed/tiktok_processed_with_nlp_features.csv")
+        st.subheader("1. Topic Modeling (LDA) Results")
+        st.write("Each video description is assigned a dominant topic using Latent Dirichlet Allocation (LDA). The distribution of topics over time helps identify emerging trends.")
+        # Topic evolution over time (weekly)
+        df['create_time'] = pd.to_datetime(df['create_time'])
+        df['date_group'] = df['create_time'].dt.to_period('W').dt.start_time
+        topic_evolution = df.groupby('date_group')['dominant_topic'].value_counts(normalize=True).unstack(fill_value=0)
+        topic_evolution = topic_evolution.rolling(window=4).mean().dropna()
+        fig_topic = px.line(topic_evolution, x=topic_evolution.index, y=topic_evolution.columns,
+                           labels={'value': 'Topic Proportion', 'date_group': 'Date'},
+                           title='Topic Evolution Over Time (4-week rolling average)')
+        st.plotly_chart(fig_topic, use_container_width=True)
+        st.markdown("""
+**Insights:**
+- Topic modeling reveals how content themes shift over time.
+- Spikes in certain topics may indicate emerging trends or viral events.
+""")
+
+        st.subheader("2. Sentiment Analysis")
+        st.write("Sentiment polarity is calculated for each video description. Sentiment labels (Positive, Neutral, Negative) are assigned based on polarity.")
+        sentiment_counts = df['sentiment_label'].value_counts().reindex(['Positive', 'Neutral', 'Negative']).fillna(0)
+        fig_sentiment = px.bar(x=sentiment_counts.index, y=sentiment_counts.values, color=sentiment_counts.index,
+                              labels={'x': 'Sentiment Label', 'y': 'Number of Videos'},
+                              title='Sentiment Label Distribution')
+        st.plotly_chart(fig_sentiment, use_container_width=True)
+        st.markdown("""
+**Observations:**
+- Most videos are Neutral, but trending videos have a higher proportion of Positive and Negative sentiment.
+- Neutral sentiment is not a strong predictor of virality on its own.
+""")
+        # Sentiment vs Virality Score
+        fig_sent_virality = px.scatter(df, x='sentiment_polarity', y='virality_score', color='is_trending',
+                                      labels={'sentiment_polarity': 'Sentiment Polarity', 'virality_score': 'Virality Score', 'is_trending': 'Trending'},
+                                      title='Sentiment Polarity vs Virality Score',
+                                      color_discrete_map={True: 'orange', False: 'blue'})
+        st.plotly_chart(fig_sent_virality, use_container_width=True)
+        st.markdown("""
+- Trending videos reach higher virality scores regardless of sentiment polarity.
+- Peak engagement is centered around neutral sentiment, but high engagement outliers occur at all sentiment levels.
+""")
+
+        st.subheader("3. Named Entity Recognition (NER)")
+        st.write("NER extracts names, brands, and events from video descriptions. Entities with high 'lift' in trending videos are potential emerging trends.")
+        # Top emerging entities (by lift)
+        emerging_entities = []
+        if 'extracted_entities' in df.columns:
+            # Convert stringified list of tuples to list of tuples
+            df['extracted_entities'] = df['extracted_entities'].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else [])
+            from collections import Counter
+            trending_entities = [entity[0] for sublist in df[df['is_trending']]['extracted_entities'] for entity in sublist]
+            non_trending_entities = [entity[0] for sublist in df[~df['is_trending']]['extracted_entities'] for entity in sublist]
+            trending_entity_counts = Counter(trending_entities)
+            non_trending_entity_counts = Counter(non_trending_entities)
+            total_trending = sum(trending_entity_counts.values()) or 1
+            total_non_trending = sum(non_trending_entity_counts.values()) or 1
+            all_unique_entities = set(trending_entity_counts.keys()).union(set(non_trending_entity_counts.keys()))
+            for entity in all_unique_entities:
+                count_trending = trending_entity_counts.get(entity, 0)
+                count_non_trending = non_trending_entity_counts.get(entity, 0)
+                if count_trending > 0 and count_non_trending > 0:
+                    prop_trending = count_trending / total_trending
+                    prop_non_trending = count_non_trending / total_non_trending
+                    if prop_non_trending > 0:
+                        lift = prop_trending / prop_non_trending
+                        if lift > 1.5 and count_trending > 5:
+                            emerging_entities.append((entity, lift, count_trending))
+            emerging_entities = sorted(emerging_entities, key=lambda x: x[1], reverse=True)[:10]
+        if emerging_entities:
+            st.markdown("**Top Emerging Entities in Trending Videos (by Lift > 1.5):**")
+            st.table({
+                'Entity': [e[0] for e in emerging_entities],
+                'Lift': [f"{e[1]:.2f}" for e in emerging_entities],
+                'Trending Mentions': [e[2] for e in emerging_entities],
+                'Interpretation': [
+                    "Trending in niche or non-English content" if e[0].lower() == "comedia" else
+                    "Possibly linked to academic season/news" if e[0].lower() == "harvard" else
+                    "Spanish-language content trend" if e[0].lower() == "que" else
+                    "Possibly related to world events or awareness" if e[0].lower() == "un" else
+                    "Emerging or unique keyword in trending videos" for e in emerging_entities
+                ]
+            })
+            st.markdown("""
+**About Lift:**
+- **Lift** measures how much more likely an entity is to appear in trending videos compared to non-trending ones.
+- A lift value > 1.5 means the entity is at least 50% more common in trending content, making it a strong candidate for early trend detection.
+- Entities with high lift and sufficient trending mentions are excellent signals for emerging trends.
+""")
+        else:
+            st.info("No significant emerging entities found or NER data missing.")
+        # Entity mention volume over time (top 5 entities)
+        entity_data = []
+        for index, row in df.iterrows():
+            for entity in row['extracted_entities']:
+                entity_data.append({'date_group': row['date_group'], 'entity': entity[0]})
+        if entity_data:
+            entity_df = pd.DataFrame(entity_data)
+            entity_trends_over_time = entity_df.groupby(['date_group', 'entity']).size().unstack(fill_value=0)
+            top_entities = entity_df['entity'].value_counts().head(5).index.tolist()
+            fig_entity = px.line(entity_trends_over_time[top_entities],
+                                x=entity_trends_over_time.index,
+                                y=top_entities,
+                                labels={'value': 'Mentions', 'date_group': 'Date'},
+                                title='Top 5 Entity Mention Volume Over Time')
+            st.plotly_chart(fig_entity, use_container_width=True)
+        else:
+            st.info("No entity time series data available.")
+        st.markdown("""
+**Entity Trend Insights:**
+- Spikes in entity mentions often signal viral or seasonal trends.
+- Trending videos include more unique or emerging keywords than non-trending ones.
+""")
+    except Exception as e:
+        st.error(f"Could not load NLP trend data or plot: {e}")
 
 #------------------------------------------------------
 
