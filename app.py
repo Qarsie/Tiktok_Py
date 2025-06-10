@@ -7,8 +7,8 @@ pages = [
     "Part 1: Data Collection",
     "Part 2: Data Preprocessing",
     "Part 3: Exploratory Data Analysis (EDA)",
-    "Part 4: Predictive Model Development",
-    "Part 5: Trend Identification Using NLP",
+    "Part 4: Trend Identification Using NLP",
+    "Part 5: Predictive Model Development",
     "Part 6: AI-Driven Trend Forecasting",
     "Part 7: Visualization",
     "Part 8 & 9: Summary"
@@ -50,11 +50,7 @@ if selected_page == "Part 1: Data Collection":
     except Exception as e:
         st.error(f"Could not load data: {e}")
 
-
-
-
-
-
+#------------------------------------------------------
 
 elif selected_page == "Part 2: Data Preprocessing":
     st.header("Part 2: Data Cleaning and Preprocessing")
@@ -138,85 +134,103 @@ elif selected_page == "Part 2: Data Preprocessing":
     except Exception as e:
         st.error(f"Could not load data: {e}")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#------------------------------------------------------
 
 elif selected_page == "Part 3: Exploratory Data Analysis (EDA)":
     st.header("Part 3: Exploratory Data Analysis (EDA)")
     st.write("Explore the data with visualizations and statistics.")
 
-elif selected_page == "Part 4: Predictive Model Development":
-    st.header("Part 4: Predictive Model Development")
+#------------------------------------------------------
+
+
+
+elif selected_page == "Part 4: Trend Identification Using NLP":
+    st.header("Part 4: Trend Identification Using NLP")
+    st.write("Use NLP techniques to identify trends.")
+
+#------------------------------------------------------
+
+elif selected_page == "Part 5: Predictive Model Development":
+    st.header("Part 5: Predictive Model Development")
     st.write("Develop predictive models based on the data.")
 
-elif selected_page == "Part 5: Trend Identification Using NLP":
-    st.header("Part 5: Trend Identification Using NLP")
-    st.write("Use NLP techniques to identify trends.")
+#------------------------------------------------------
 
 elif selected_page == "Part 6: AI-Driven Trend Forecasting":
     st.header("Part 6: AI-Driven Trend Forecasting")
-    st.write("Forecast future trends using AI models.")
+    st.write("|   Model : Random Forest Classifier")
+
+    st.header("ROC CURVE")
+
+    st.subheader("Next 24 Hours")
+
+    try:
+        st.image("data/graph/ROC-24HOURS.png")
+    except Exception as e:
+        st.error(f"Could not load image: {e}")
+
+    st.subheader("Next 7 Days")
+    try: 
+        st.image("data/graph/ROC-7DAYS.png")
+    except Exception as e:
+        st.error(f"Could not load image: {e}")
+
+
+
+    st.header("VIRAL HASHTAG PREDICTION")
+
+    st.subheader("Next 24 Hours")
+    try:
+        st.image("data/graph/HASHTAG-24.png")
+    except Exception as e:
+        st.error(f"Could not load image: {e}")
+
+    st.subheader("Next 7 Days")
+    try:
+        st.image("data/graph/HASHTAG-7.png")
+    except Exception as e:
+        st.error(f"Could not load image: {e}")
+
+
+    st.header("VIRAL CATEGORY PREDICTION")
+    st.subheader("Next 24 Hours")
+
+    try:
+        st.image("data/graph/PIE-24HOURS.png")
+    except Exception as e:
+        st.error(f"Could not load image: {e}")
+
+    st.subheader("Next 7 Days")
+    try:
+        st.image("data/graph/PIE-7DAYS.png")
+    except Exception as e:
+        st.error(f"Could not load image: {e}")
+
+
+    st.header("VIRAL ACCOUNT PREDICTION")
+
+    st.subheader("Next 24 Hours")
+    try:
+        df = pd.read_csv("data/processed/top_viral_24h.csv")
+        st.dataframe(df.head(10))
+    except Exception as e:
+        st.error(f"Could not load image: {e}")
+
+    st.subheader("Next 7 Days")
+    try:
+        df = pd.read_csv("data/processed/top_viral_7d.csv")
+        st.dataframe(df.head(10))
+    except Exception as e:
+        st.error(f"Could not load image: {e}")
+
+
+#------------------------------------------------------
 
 elif selected_page == "Part 7: Visualization":
     st.header("Part 7: Visualization")
     st.write("Visualize the results and findings.")
+
+#------------------------------------------------------
 
 elif selected_page == "Part 8 & 9: Summary":
     st.header("Part 8 & 9: Summary")
