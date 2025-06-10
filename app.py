@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 
 # Sidebar navigation
@@ -140,7 +139,126 @@ elif selected_page == "Part 2: Data Preprocessing":
 
 elif selected_page == "Part 3: Exploratory Data Analysis (EDA)":
     st.header("Part 3: Exploratory Data Analysis (EDA)")
-    st.write("Explore the data with visualizations and statistics.")
+    st.write("Explore the data with interactive visualizations and statistics.")
+    try:
+        import plotly.express as px
+        df = pd.read_csv("data/processed/tiktok_categorized.csv")
+        st.subheader("1. Engagement Rate per Play by Hour of Day")
+        fig1 = px.box(df, x='create_hour', y='engagement_rate_per_play',
+                     title="Engagement Rate per Play by Hour of Day",
+                     labels={"create_hour": "Hour of Day", "engagement_rate_per_play": "Engagement Rate"})
+        st.plotly_chart(fig1, use_container_width=True)
+        st.markdown("""
+**Observations:**
+- Median engagement rate is stable across hours (~0.10 to ~0.15).
+- Slightly higher engagement between midnight to 5 AM.
+- Outliers present at all hours (viral potential anytime).
+- Reduced engagement around 10 AM – 12 PM.
+""")
+
+        st.subheader("2. Engagement Rate per Play by Day of Week")
+        fig2 = px.box(df, x='day_of_week', y='engagement_rate_per_play',
+                     title="Engagement Rate per Play by Day of Week",
+                     labels={"day_of_week": "Day of Week (0=Monday)", "engagement_rate_per_play": "Engagement Rate"})
+        st.plotly_chart(fig2, use_container_width=True)
+        st.markdown("""
+**Observations:**
+- Sunday shows the highest median engagement.
+- Monday is a close second.
+- Midweek days (Tue–Fri) have lower medians.
+- Outliers occur on all days (viral content possible any day).
+""")
+
+        st.subheader("3. Sentiment Polarity vs. Engagement Rate")
+        fig3 = px.scatter(df, x='sentiment_polarity', y='engagement_rate_per_play',
+                         color='sentiment_subjectivity',
+                         color_continuous_scale='RdBu',
+                         title="Sentiment Polarity vs. Engagement Rate",
+                         labels={"sentiment_polarity": "Sentiment Polarity", "engagement_rate_per_play": "Engagement Rate per Play", "sentiment_subjectivity": "Subjectivity"})
+        st.plotly_chart(fig3, use_container_width=True)
+        st.markdown("""
+**Key Interpretations:**
+- Engagement occurs across all sentiment values.
+- Neutral sentiment dominates volume, but less likely to reach high engagement extremes.
+- Highly subjective content (redder dots) is widely spread and can perform well.
+- High engagement occurs at all sentiment levels.
+""")
+
+        st.subheader("4. Hashtag Count vs. Engagement Rate by Time Period")
+        max_hashtags = 40
+        max_engagement_rate = 0.5
+        filtered_df = df[(df['hashtag_count'] <= max_hashtags) & (df['engagement_rate_per_play'] <= max_engagement_rate)]
+        fig4 = px.scatter(filtered_df, x='hashtag_count', y='engagement_rate_per_play', color='time_period',
+                         title="Hashtag Count vs. Engagement Rate by Time Period",
+                         labels={"hashtag_count": "Hashtag Count", "engagement_rate_per_play": "Engagement Rate per Play", "time_period": "Time Period"})
+        st.plotly_chart(fig4, use_container_width=True)
+        st.markdown("""
+**Insights:**
+- Fewer hashtags (0-15) achieve higher engagement rates.
+- Optimal range: 5-12 hashtags.
+- Evening and night posts show strongest performance.
+- Over-hashtagting (>20) reduces engagement.
+""")
+
+        st.subheader("5. Engagement Rate per Play by Content Category")
+        filtered_cat = df[~df['content_description'].isin(["No Description", -1.0])].copy()
+        order = sorted(filtered_cat['content_category'].unique())
+        fig5 = px.box(filtered_cat, x='content_category', y='engagement_rate_per_play',
+                    category_orders={'content_category': order},
+                    title="Engagement Rate per Play by Content Category (Topics 0–7, Excluding 'No description')",
+                    labels={"content_category": "Content Category (Topic)", "engagement_rate_per_play": "Engagement Rate per Play"})
+        fig5.update_xaxes(tickangle=45)
+        st.plotly_chart(fig5, use_container_width=True)
+        st.markdown("""
+**Category Insights:**
+- Educational (Topic 0) and relatable (Topic 1) content have highest engagement.
+- Humor (Topic 3) underperforms.
+- Relationship (Topic 2) is high-risk/high-reward.
+- Topics 5–7 are steady but modest performers.
+""")
+
+        st.subheader("6. Correlation Matrix (Key Features)")
+        import plotly.figure_factory as ff
+        cols_of_interest = [
+            'engagement_rate_per_play', 'likes', 'comments', 'shares', 'plays',
+            'hashtag_count', 'create_hour', 'day_of_week', 'sentiment_polarity', 'sentiment_subjectivity'
+        ]
+        corr = df[cols_of_interest].corr().values
+        fig6 = ff.create_annotated_heatmap(
+            z=corr,
+            x=cols_of_interest,
+            y=cols_of_interest,
+            colorscale='Viridis',
+            showscale=True,
+            zmin=-1, zmax=1,
+            annotation_text=[[f"{v:.2f}" for v in row] for row in corr]
+        )
+        fig6.update_layout(title_text="Correlation Matrix (Key Features)",
+                          font=dict(color='white'),
+                          plot_bgcolor='black',
+                          paper_bgcolor='black')
+        st.plotly_chart(fig6, use_container_width=True)
+        st.markdown("""
+**Correlation Highlights:**
+- Likes strongly correlate with plays, shares, and comments.
+- Hashtag count has minimal impact on engagement.
+""")
+
+        st.subheader("7. Top 10 Accounts by Average Engagement Rate")
+        top_accounts = df.groupby('author')['engagement_rate_per_play'].mean().sort_values(ascending=False).head(10)
+        fig7 = px.bar(x=top_accounts.values, y=top_accounts.index,
+                    orientation='h',
+                    title="Top 10 Accounts by Average Engagement Rate",
+                    labels={"x": "Average Engagement Rate per Play", "y": "Account Name"},
+                    color=top_accounts.values, color_continuous_scale='viridis')
+        st.plotly_chart(fig7, use_container_width=True)
+        st.markdown("""
+**Account Insights:**
+- Top 10 accounts have very close engagement rates (all 40%+).
+- Different content niches can achieve elite engagement.
+""")
+    except Exception as e:
+        st.error(f"Could not load EDA data or plot: {e}")
 
 #------------------------------------------------------
 
