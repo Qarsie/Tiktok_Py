@@ -69,16 +69,25 @@ elif selected_page == "Part 2: Data Preprocessing":
         st.error(f"Could not load data: {e}")
 
     st.subheader("**1.1 Column Merging**")
-    st.write("| posted_time & create_time --> create_time")
-    st.write("| views & plays --> plays")
+
+    st.markdown("""
+    **Observations:**
+    - posted_time & create_time --> create_time
+    - views & plays --> plays
+    """)
+
     df['create_time'] = df['create_time'].fillna(df['posted_time'])
     df['plays'] = df['plays'].fillna(df['views'])
     st.write("\nNull values in create_time:", df['create_time'].isnull().sum())
     st.write("Null values in plays:", df['plays'].isnull().sum())
 
     st.subheader("1.2 Null Value Handling")
-    st.write("Description null value --> No Description")
-    st.write("Hashtags null value --> empty list [  ]")
+    st.markdown("""
+**Observations:**
+- Description null value --> No Description
+- Hashtags null value --> empty list [  ]
+""")
+
 
     try:
             df = pd.read_csv("data/processed/null_value_handling.csv")
@@ -109,8 +118,12 @@ elif selected_page == "Part 2: Data Preprocessing":
 
     st.header("3. Engagement Metrics Calculation")
     st.write("| Create engagement metrics to quantify video performance")
-    st.write(" Total engagement = likes + comments + shares")
-    st.write(" Engagement rate per play = total engagement / plays")
+    st.markdown("""
+    **Observations:**
+    - Total engagement = likes + comments + shares
+    - Engagement rate per play = total engagement / plays
+    """)
+
 
     try:
             df = pd.read_csv("data/processed/engagement_metric_sample.csv")
