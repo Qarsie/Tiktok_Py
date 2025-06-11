@@ -448,24 +448,27 @@ elif selected_page == "Part 5: Predictive Model Development":
     performance_df = pd.DataFrame(performance_data)
     st.dataframe(performance_df, use_container_width=True)
     
-    st.success("🏆 **Best Model:** Logistic Regression with AUC = 0.643")
-      # Display ROC Curve
-    st.subheader("📈 ROC Curve Analysis")
-    try:
-        st.image("data/graph/question4-roc-curve-logistic.png", 
-                caption="ROC Curve - Logistic Regression (Test Set)", 
-                use_container_width=True)
-    except Exception as e:
-        st.error(f"Could not load ROC curve image: {e}")
+    st.success("🏆 **Best Model:** Logistic Regression with AUC = 0.643")      # Display ROC Curve and Confusion Matrix side by side
+    st.subheader("📈 Model Performance Visualization")
+    col1, col2 = st.columns(2)
     
-    # Display Confusion Matrix
-    st.subheader("🔍 Confusion Matrix")
-    try:
-        st.image("data/graph/question4-confusion-matrix-logistic.png", 
-                caption="Confusion Matrix - Logistic Regression (Test Set)", 
-                use_container_width=True)
-    except Exception as e:
-        st.error(f"Could not load confusion matrix image: {e}")
+    with col1:
+        st.markdown("**ROC Curve Analysis**")
+        try:
+            st.image("data/graph/question4-roc-curve-logistic.png", 
+                    caption="ROC Curve - Logistic Regression (Test Set)", 
+                    use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load ROC curve image: {e}")
+    
+    with col2:
+        st.markdown("**Confusion Matrix**")
+        try:
+            st.image("data/graph/question4-confusion-matrix-logistic.png", 
+                    caption="Confusion Matrix - Logistic Regression (Test Set)", 
+                    use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load confusion matrix image: {e}")
       # Classification Report Results
     st.subheader("📋 Classification Report Results")
     
@@ -490,24 +493,27 @@ elif selected_page == "Part 5: Predictive Model Development":
     - **Features:** Captures weekly seasonality and trend patterns
     - **Output:** Daily virality score forecasts with confidence intervals
     """
-    st.markdown(arima_info)
-      # Display 7-Day Rolling Average
-    st.subheader("📊 7-Day Rolling Average Virality Score")
-    try:
-        st.image("data/graph/question4-7dayrollingaverage-virality-score.png", 
-                caption="7-Day Rolling Average of Virality Scores Over Time", 
-                use_container_width=True)
-    except Exception as e:
-        st.error(f"Could not load rolling average image: {e}")
+    st.markdown(arima_info)      # Display Time Series Analysis side by side
+    st.subheader("📊 Time Series Analysis & Forecasting")
+    col3, col4 = st.columns(2)
     
-    # Display ARIMA Forecast
-    st.subheader("🔮 30-Day ARIMA Forecast")
-    try:
-        st.image("data/graph/question4-30day-virality-score-forecast.png", 
-                caption="30-Day Virality Score Forecast with Confidence Intervals", 
-                use_container_width=True)
-    except Exception as e:
-        st.error(f"Could not load forecast image: {e}")
+    with col3:
+        st.markdown("**7-Day Rolling Average Virality Score**")
+        try:
+            st.image("data/graph/question4-7dayrollingaverage-virality-score.png", 
+                    caption="7-Day Rolling Average of Virality Scores Over Time", 
+                    use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load rolling average image: {e}")
+    
+    with col4:
+        st.markdown("**30-Day ARIMA Forecast**")
+        try:
+            st.image("data/graph/question4-30day-virality-score-forecast.png", 
+                    caption="30-Day Virality Score Forecast with Confidence Intervals", 
+                    use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load forecast image: {e}")
       # ARIMA Model Summary
     st.subheader("📈 ARIMA Model Summary")
     arima_summary = """
@@ -525,68 +531,79 @@ elif selected_page == "Part 6: AI-Driven Trend Forecasting":
     st.header("Part 6: AI-Driven Trend Forecasting")
     st.write("|   Model : Random Forest Classifier")
 
-    st.header("ROC CURVE")
+    # ROC CURVE - Side by Side
+    st.header("📈 ROC CURVE ANALYSIS")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Next 24 Hours**")
+        try:
+            st.image("data/graph/ROC-24HOURS.png", use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load 24-hour ROC image: {e}")
 
-    st.subheader("Next 24 Hours")
+    with col2:
+        st.markdown("**Next 7 Days**")
+        try: 
+            st.image("data/graph/ROC-7DAYS.png", use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load 7-day ROC image: {e}")
 
-    try:
-        st.image("data/graph/ROC-24HOURS.png")
-    except Exception as e:
-        st.error(f"Could not load image: {e}")
+    # VIRAL HASHTAG PREDICTION - Side by Side
+    st.header("🏷️ VIRAL HASHTAG PREDICTION")
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        st.markdown("**Next 24 Hours**")
+        try:
+            st.image("data/graph/HASHTAG-24.png", use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load 24-hour hashtag image: {e}")
 
-    st.subheader("Next 7 Days")
-    try: 
-        st.image("data/graph/ROC-7DAYS.png")
-    except Exception as e:
-        st.error(f"Could not load image: {e}")
+    with col4:
+        st.markdown("**Next 7 Days**")
+        try:
+            st.image("data/graph/HASHTAG-7.png", use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load 7-day hashtag image: {e}")
 
+    # VIRAL CATEGORY PREDICTION - Side by Side
+    st.header("📊 VIRAL CATEGORY PREDICTION")
+    col5, col6 = st.columns(2)
+    
+    with col5:
+        st.markdown("**Next 24 Hours**")
+        try:
+            st.image("data/graph/PIE-24HOURS.png", use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load 24-hour category image: {e}")
 
+    with col6:
+        st.markdown("**Next 7 Days**")
+        try:
+            st.image("data/graph/PIE-7DAYS.png", use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load 7-day category image: {e}")
 
-    st.header("VIRAL HASHTAG PREDICTION")
+    # VIRAL ACCOUNT PREDICTION - Side by Side
+    st.header("👤 VIRAL ACCOUNT PREDICTION")
+    col7, col8 = st.columns(2)
+    
+    with col7:
+        st.markdown("**Next 24 Hours**")
+        try:
+            df = pd.read_csv("data/processed/top_viral_24h.csv")
+            st.dataframe(df.head(10), use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load 24-hour viral accounts data: {e}")
 
-    st.subheader("Next 24 Hours")
-    try:
-        st.image("data/graph/HASHTAG-24.png")
-    except Exception as e:
-        st.error(f"Could not load image: {e}")
-
-    st.subheader("Next 7 Days")
-    try:
-        st.image("data/graph/HASHTAG-7.png")
-    except Exception as e:
-        st.error(f"Could not load image: {e}")
-
-
-    st.header("VIRAL CATEGORY PREDICTION")
-    st.subheader("Next 24 Hours")
-
-    try:
-        st.image("data/graph/PIE-24HOURS.png")
-    except Exception as e:
-        st.error(f"Could not load image: {e}")
-
-    st.subheader("Next 7 Days")
-    try:
-        st.image("data/graph/PIE-7DAYS.png")
-    except Exception as e:
-        st.error(f"Could not load image: {e}")
-
-
-    st.header("VIRAL ACCOUNT PREDICTION")
-
-    st.subheader("Next 24 Hours")
-    try:
-        df = pd.read_csv("data/processed/top_viral_24h.csv")
-        st.dataframe(df.head(10))
-    except Exception as e:
-        st.error(f"Could not load image: {e}")
-
-    st.subheader("Next 7 Days")
-    try:
-        df = pd.read_csv("data/processed/top_viral_7d.csv")
-        st.dataframe(df.head(10))
-    except Exception as e:
-        st.error(f"Could not load image: {e}")
+    with col8:
+        st.markdown("**Next 7 Days**")
+        try:
+            df = pd.read_csv("data/processed/top_viral_7d.csv")
+            st.dataframe(df.head(10), use_container_width=True)
+        except Exception as e:
+            st.error(f"Could not load 7-day viral accounts data: {e}")
 
 
 #------------------------------------------------------
@@ -745,15 +762,22 @@ elif selected_page == "Part 7: Visualization":
         exploded = exploded[
             exploded['hashtag_list_clean'].notna() &
             (exploded['hashtag_list_clean'].str.strip() != '')
-        ]
-
+        ]        
         top_hashtags = (
             exploded['hashtag_list_clean']
             .value_counts()
             .nlargest(10)
             .reset_index()
-            .rename(columns={'index': 'Hashtag', 'hashtag_list_clean': 'Mentions'})
         )
+        
+        # Fix column names for newer pandas versions
+        if 'hashtag_list_clean' in top_hashtags.columns:
+            top_hashtags.columns = ['Hashtag', 'Mentions']
+        elif 'index' in top_hashtags.columns:
+            top_hashtags = top_hashtags.rename(columns={'index': 'Hashtag', 'hashtag_list_clean': 'Mentions'})
+        else:
+            # For newer pandas versions that use 'count' as default column name
+            top_hashtags.columns = ['Hashtag', 'Mentions']
 
         fig = px.bar(
             top_hashtags,
