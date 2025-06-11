@@ -786,3 +786,33 @@ elif selected_page == "Part 7: Visualization":
 elif selected_page == "Part 8 & 9: Summary":
     st.header("Part 8 & 9: Summary")
     st.write("Summarize the project and findings.")
+
+    st.subheader("📌 Project Title:")
+    st.markdown("**AI-Powered Trend Prediction on TikTok: Leveraging Data Science for Social Media Insights**")
+
+    st.subheader("🎯 Project Objective:")
+    st.write("To develop an AI-powered system that analyzes TikTok video data to identify, understand, and predict trends and viral content patterns.")
+
+    st.subheader("📝 8. Insights Gained from the Project")
+    st.markdown("""
+    - **AI Application for Trend Forecasting:**
+        - Predicts short-term virality using metadata, sentiment, and hashtags.
+        - Helps brands, marketers, and influencers optimize post timing, content tone, and hashtag use.
+    - **Recommendations:**
+        - **Creators:** Post during midnight–5 AM, use 5–12 hashtags, and create emotionally engaging content.
+        - **Brands:** Monitor high-lift trending entities and align messaging with top categories like Sports and DIY.
+        - **Strategists:** Use model outputs (probability scores, forecasts) for proactive campaign planning.
+    """)
+
+    st.subheader("🚧 9. Challenges and Future Work")
+    st.markdown("""
+    - **Challenges:**
+        - **Data Limitations:** API restrictions limited access to follower counts and full metadata.
+        - **Imbalanced Classes:** Viral content is rare, requiring oversampling (e.g., SMOTE).
+        - **External Influences:** Virality is also affected by real-world events, which are hard to capture.
+    - **Future Work:**
+        - **Real-Time Forecasting:** Integrate live pipelines for continuous trend monitoring.
+        - **Deeper NLP:** Use transformer models like BERT for better semantic understanding.
+        - **Cross-Platform Data:** Combine with external trend sources (e.g., Google Trends, Twitter).
+        - **User-Level Trends:** Model creator behavior over time for personalized virality predictions.
+    """)
