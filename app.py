@@ -22,7 +22,7 @@ pages = [
 selected_page = st.sidebar.radio("Go to", pages)
 
 # Main content
-st.title("TikTok Data Analysis App")
+st.title("AI-Powered Trend Prediction on TikTok")
 
 if selected_page == "Part 1: Data Collection":
     st.header("Part 1: Data Collection")
@@ -76,7 +76,6 @@ elif selected_page == "Part 2: Data Preprocessing":
     st.subheader("**1.1 Column Merging**")
 
     st.markdown("""
-    **Observations:**
     - posted_time & create_time --> create_time
     - views & plays --> plays
     """)
@@ -88,7 +87,6 @@ elif selected_page == "Part 2: Data Preprocessing":
 
     st.subheader("1.2 Null Value Handling")
     st.markdown("""
-**Observations:**
 - Description null value --> No Description
 - Hashtags null value --> empty list [  ]
 """)
@@ -124,7 +122,6 @@ elif selected_page == "Part 2: Data Preprocessing":
     st.header("3. Engagement Metrics Calculation")
     st.write("| Create engagement metrics to quantify video performance")
     st.markdown("""
-    **Observations:**
     - Total engagement = likes + comments + shares
     - Engagement rate per play = total engagement / plays
     """)
