@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import ast
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
 
 # Sidebar navigation
 st.sidebar.title("Navigation")
@@ -592,6 +597,189 @@ elif selected_page == "Part 6: AI-Driven Trend Forecasting":
 elif selected_page == "Part 7: Visualization":
     st.header("Part 7: Visualization")
     st.write("Visualize the results and findings.")
+
+    # Load processed data
+    data_path = 'data/processed/tiktok_processed_with_nlp_features.csv'
+    df = pd.read_csv(data_path)
+
+    # Preprocessing
+    df['create_time'] = pd.to_datetime(df['create_time'], errors='coerce')
+    df['date'] = df['create_time'].dt.date
+    df.columns = df.columns.str.strip()
+
+    # === Top Entities Over Time ===
+    st.subheader('Top Extracted Entities Over Time')
+    TOP_N = st.slider("Select number of top entities to display:", 3, 20, 5, key="entities_slider")
+
+    if 'create_time' in df.columns and 'extracted_entities' in df.columns:
+        df['extracted_entities'] = df['extracted_entities'].apply(
+            lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+        )
+
+        ENTITY_LABELS_MAP = {
+            "PERSON": "Person", "ORG": "Organization", "GPE": "Country/City/State", "LOC": "Location",
+            "PRODUCT": "Product", "EVENT": "Event", "WORK_OF_ART": "Work of Art", "LAW": "Law",
+            "LANGUAGE": "Language", "DATE": "Date", "TIME": "Time", "PERCENT": "Percent",
+            "MONEY": "Money", "QUANTITY": "Quantity", "ORDINAL": "Ordinal", "CARDINAL": "Cardinal",
+            "NORP": "Nationality/Religious/Political Group", "FAC": "Facility",
+        }
+
+        all_labels = set()
+        for ents in df['extracted_entities']:
+            if isinstance(ents, list):
+                for ent in ents:
+                    if isinstance(ent, (list, tuple)) and len(ent) == 2:
+                        all_labels.add(ent[1])
+        all_labels = sorted(all_labels)
+        label_display_map = {ENTITY_LABELS_MAP.get(code, code): code for code in all_labels}
+        display_labels = list(label_display_map.keys())
+
+        selected_display_labels = st.multiselect(
+            "Filter by entity category (label):",
+            options=display_labels,
+            default=display_labels,
+            key="entity_labels"
+        )
+        selected_labels = [label_display_map[d] for d in selected_display_labels]
+
+        entity_df = df.explode('extracted_entities')
+        entity_df = entity_df.dropna(subset=['extracted_entities'])
+        entity_df[['entity', 'label']] = entity_df['extracted_entities'].apply(
+            lambda x: pd.Series(x) if isinstance(x, (list, tuple)) and len(x) == 2 else pd.Series([None, None])
+        )
+        entity_df = entity_df[entity_df['label'].isin(selected_labels)]
+
+        top_entities = entity_df['entity'].value_counts().nlargest(TOP_N).index.tolist()
+        filtered_entity_df = entity_df[entity_df['entity'].isin(top_entities)]
+
+        trend_df = (
+            filtered_entity_df.groupby(['date', 'entity'])
+            .size()
+            .reset_index(name='mentions')
+        )
+
+        fig = px.line(
+            trend_df,
+            x='date',
+            y='mentions',
+            color='entity',
+            title=f"Top {TOP_N} Mentioned Entities Over Time",
+            labels={'mentions': 'Mentions', 'date': 'Date'}
+        )
+        st.plotly_chart(fig)
+        st.caption("Shows frequency of top N named entities (topics) extracted per day, filtered by category.")
+    else:
+        st.warning("The required columns 'create_time' and 'extracted_entities' are missing from the dataset.")
+
+    # === Timing vs Engagement ===
+    st.subheader('Post Timing vs Engagement')
+    if 'create_hour' in df.columns and 'day_of_week' in df.columns and 'engagement_rate_per_play_capped' in df.columns:
+        pivot = df.pivot_table(
+            values='engagement_rate_per_play_capped',
+            index='day_of_week',
+            columns='create_hour',
+            aggfunc='mean'
+        ).sort_index()
+
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=pivot.values,
+                x=pivot.columns,
+                y=["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                colorscale='YlGnBu',
+                zsmooth='best',
+                colorbar=dict(title="Engagement Rate Per Play")
+            )
+        )
+
+        fig.update_layout(
+            title="Smooth Heatmap: Engagement Rate by Post Timing",
+            xaxis_title="Hour of Day",
+            yaxis_title="Day of Week",
+            autosize=True
+        )
+
+        st.plotly_chart(fig)
+
+    # === Sentiment vs Virality ===
+    st.subheader('Sentiment vs Normalized Virality (Polarity ≠ 0)')
+    if {'sentiment_polarity', 'sentiment_subjectivity', 'virality_score_normalized'}.issubset(df.columns):
+        filtered_df = df[
+            (df['sentiment_polarity'] != 0) &
+            (df['virality_score_normalized'] < 1)
+        ]
+
+        fig = px.scatter(
+            filtered_df,
+            x='sentiment_polarity',
+            y='virality_score_normalized',
+            color='sentiment_subjectivity',
+            color_continuous_scale='RdYlBu_r',
+            title='Sentiment vs Virality (Excluding Neutral Polarity)',
+            labels={
+                'sentiment_polarity': 'Polarity (Negative → Positive)',
+                'virality_score_normalized': 'Normalized Virality',
+                'sentiment_subjectivity': 'Subjectivity (Objective → Subjective)'
+            },
+            hover_data=['video_id'] if 'video_id' in df.columns else None
+        )
+        fig.update_layout(
+            xaxis=dict(range=[-1, 1]),
+            yaxis=dict(range=[0, 0.5])
+        )
+
+        st.plotly_chart(fig)
+        st.caption('Neutral-toned (polarity = 0) posts are excluded for clarity.')
+
+    # === Trending Hashtags Monitor ===
+    st.subheader('📈 Real-Time Trending Hashtag Monitor')
+    if 'create_time' in df.columns and 'hashtag_list_clean' in df.columns:
+        df['hashtag_list_clean'] = df['hashtag_list_clean'].apply(
+            lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+        )
+
+        current_time = df['create_time'].max()
+        time_window_days = st.slider("Time window (days)", 7, 30, 7, key="hashtag_slider")
+
+        recent_df = df[df['create_time'] > (current_time - pd.Timedelta(days=time_window_days))]
+
+        exploded = recent_df.explode('hashtag_list_clean')
+        exploded = exploded.dropna(subset=['hashtag_list_clean'])
+        exploded = exploded[
+            exploded['hashtag_list_clean'].notna() &
+            (exploded['hashtag_list_clean'].str.strip() != '')
+        ]
+
+        top_hashtags = (
+            exploded['hashtag_list_clean']
+            .value_counts()
+            .nlargest(10)
+            .reset_index()
+            .rename(columns={'index': 'Hashtag', 'hashtag_list_clean': 'Mentions'})
+        )
+
+        fig = px.bar(
+            top_hashtags,
+            x='Mentions',
+            y='Hashtag',
+            title=f"Top Trending Hashtags (Last {time_window_days} Days)",
+            orientation='h'
+        )
+
+        fig.update_layout(
+            xaxis_title='Count',
+            yaxis_title='Hashtag'
+        )
+
+        st.plotly_chart(fig)
+        st.caption(f"Data filtered from: {current_time - pd.Timedelta(days=time_window_days):%Y-%m-%d %H:%M} to {current_time:%Y-%m-%d %H:%M}")
+    else:
+        st.warning("Required columns 'create_time' and 'hashtag_list_clean' not found.")
+
+    # Optional: show full data
+    with st.expander("Show Raw Data"):
+        st.dataframe(df)
+
 
 #------------------------------------------------------
 
