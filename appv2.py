@@ -138,11 +138,6 @@ elif selected_page == "🧹 Part 2: Data Preprocessing":
             st.metric("📊 Total Records", f"{len(df):,}")
         with col2:
             st.metric("❌ Null Values", f"{df.isnull().sum().sum():,}")
-        with col3:
-            st.metric("✅ Complete Records", f"{len(df.dropna()):,}")
-        with col4:
-            completion_rate = (len(df.dropna()) / len(df)) * 100
-            st.metric("📈 Completion Rate", f"{completion_rate:.1f}%")
         
         # Null values table
         null_table = pd.DataFrame({
@@ -290,8 +285,6 @@ elif selected_page == "📈 Part 3: Exploratory Data Analysis (EDA)":
         
         st.success("""
         **🔍 Key Insights:**
-        - 🌙 **Prime Time:** Midnight to 5 AM shows higher engagement rates
-        - 📉 **Low Period:** 10 AM - 12 PM has reduced engagement  
         - 🎯 **Viral Potential:** Outliers present at all hours - content quality matters most
         - 📊 **Consistency:** Median engagement remains stable (~0.10 to ~0.15) across hours
         """)
@@ -311,8 +304,6 @@ elif selected_page == "📈 Part 3: Exploratory Data Analysis (EDA)":
         st.info("""
         **📈 Weekly Trends:**
         - 🏆 **Sunday (6):** Highest median engagement - weekend leisure time
-        - 🥈 **Monday (0):** Strong second place - fresh week energy
-        - 📉 **Midweek Slump:** Tuesday-Friday show lower medians
         - 🎯 **Universal Potential:** Viral content can emerge any day
         """)
 
@@ -348,9 +339,8 @@ elif selected_page == "📈 Part 3: Exploratory Data Analysis (EDA)":
         
         st.success("""
         **#️⃣ Hashtag Strategy Insights:**
-        - 🎯 **Sweet Spot:** 5-12 hashtags achieve optimal engagement
+        - 🎯 **Sweet Spot:** 0-12 hashtags achieve optimal engagement
         - 🚫 **Over-tagging:** More than 20 hashtags typically reduces performance
-        - 🌅 **Evening/Night:** Best performance times for hashtag strategies
         - 📈 **Quality over Quantity:** Fewer, relevant hashtags outperform hashtag spam
         """)
 
@@ -371,7 +361,7 @@ elif selected_page == "📈 Part 3: Exploratory Data Analysis (EDA)":
         **📱 Content Category Winners:**
         - 🎓 **Educational (Topic 0):** Highest engagement - knowledge-hungry audience
         - 🤝 **Relatable (Topic 1):** Strong performer - universal appeal
-        - 💕 **Relationship (Topic 2):** High-risk, high-reward content
+        - 💕 **Relationship (Topic 2):** Relatable, high-reward content
         - 😂 **Humor (Topic 3):** Surprisingly underperforms - market oversaturation?
         - 📊 **Topics 5-7:** Consistent but modest performers
         """)
@@ -405,7 +395,6 @@ elif selected_page == "📈 Part 3: Exploratory Data Analysis (EDA)":
         **🔗 Correlation Highlights:**
         - 💪 **Strong Relationships:** Likes correlate highly with plays, shares, and comments
         - 🏷️ **Hashtag Impact:** Minimal correlation between hashtag count and engagement
-        - ⏰ **Timing Effects:** Hour and day show weak but measurable engagement patterns
         - 🎭 **Sentiment Independence:** Sentiment shows low correlation with other metrics
         """)
 
@@ -425,7 +414,6 @@ elif selected_page == "📈 Part 3: Exploratory Data Analysis (EDA)":
         - 🎯 **Elite Threshold:** Top 10 creators all achieve 40%+ engagement rates
         - 🌈 **Diverse Niches:** Different content types can achieve elite performance
         - 🔑 **Consistency:** Elite creators maintain high engagement across posts
-        - 💡 **Success Factors:** Quality content + audience connection = sustained success
         """)
         
     except Exception as e:
@@ -521,17 +509,17 @@ elif selected_page == "🔍 Part 4: Trend Identification Using NLP":
         df = pd.read_csv("data/processed/tiktok_processed_with_nlp_features.csv")
         
         # Overview metrics
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("🔍 NLP Features", "5+")
-        with col2:
-            st.metric("🏷️ Topic Models", "LDA")
-        with col3:
-            st.metric("🎭 Sentiment Analysis", "TextBlob")
-        with col4:
-            st.metric("👤 Named Entities", "spaCy NER")
+        # col1, col2, col3, col4 = st.columns(4)
+        # with col1:
+        #     st.metric("🔍 NLP Features", "5+")
+        # with col2:
+        #     st.metric("🏷️ Topic Models", "LDA")
+        # with col3:
+        #     st.metric("🎭 Sentiment Analysis", "TextBlob")
+        # with col4:
+        #     st.metric("👤 Named Entities", "spaCy NER")
         
-        st.markdown("---")
+        # st.markdown("---")
         
         st.markdown("### 1️⃣ 📊 Topic Modeling (LDA) Results")
         st.info("🧠 **Technique:** Latent Dirichlet Allocation (LDA) to discover hidden topics in video descriptions and track their evolution over time.")
@@ -553,7 +541,6 @@ elif selected_page == "🔍 Part 4: Trend Identification Using NLP":
         - 🔄 **Dynamic Trends:** Content themes shift continuously over time
         - 📈 **Spike Detection:** Sudden topic increases indicate emerging trends or viral events
         - 🎯 **Seasonal Patterns:** Some topics show recurring seasonal popularity
-        - 📅 **4-week Smoothing:** Reduces noise to reveal genuine trend patterns
         """)
 
         st.markdown("### 2️⃣ 🎭 Sentiment Analysis")
@@ -572,8 +559,6 @@ elif selected_page == "🔍 Part 4: Trend Identification Using NLP":
         st.warning("""
         **🎭 Sentiment Patterns:**
         - ⚖️ **Neutral Majority:** Most videos maintain neutral sentiment
-        - 🔥 **Emotional Extremes:** Trending videos show higher proportions of positive/negative sentiment
-        - 📊 **Virality Factor:** Strong emotions (both positive and negative) drive engagement
         - 🎯 **Strategic Insight:** Neutral sentiment alone doesn't predict viral success
         """)
         
